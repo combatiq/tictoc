@@ -15,8 +15,9 @@ class TicTocer(object):
     '''
     class to keep detailed timings for non-deterministic and varying execution paths
     '''
-    def __init__(self, debug_memory=False):
+    def __init__(self, debug_memory=False,warmup=30):
         self.debug_memory = debug_memory
+        self.warmup = warmup
         self.timers = {}
         self.types = {}
         self.type_collects = defaultdict(dict)
@@ -28,8 +29,18 @@ class TicTocer(object):
         self.parents = {}
         self.prefix = ''
         self.prefix_stop = ''
+        self.cnters = {}
 
     def tic(self, name, prefix=''):
+
+        if name in self.cnters.keys():
+            self.cnters[name] += 1
+        else :
+            self.cnters[name] = 0
+
+        if self.cnters[name] < self.warmup : 
+            return 
+
         if self.prefix != '':
             name = self.prefix + name
 
@@ -54,6 +65,10 @@ class TicTocer(object):
         return res_dict
 
     def toc(self, name, print_it=False):
+
+        if self.cnters[name] < self.warmup : 
+            return 
+
         if name == self.prefix_stop:
             self.prefix = ''
 
@@ -105,6 +120,8 @@ class TicTocer(object):
         print out the average and std times for all tic-toced computations
         '''
         t_results = []
+        if len(list(self.roll_mean_timers.items())) == 0: 
+            return 
         for name, roll_means in self.roll_mean_timers.items():
             mean = roll_means['mean']
             maximum = roll_means['max']
